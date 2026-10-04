@@ -1,12 +1,12 @@
-import { BriefcaseBusiness } from "lucide-react";
+import { MessagesSquare } from "lucide-react";
 export default function Brand() {
   return (
     <div className="brand">
       <span className="brand-icon">
-        <BriefcaseBusiness size={19} />
+        <MessagesSquare size={19} />
       </span>
       <span>
-        briefcase<span className="brand-period">.</span>
+        interview lab<span className="brand-period">.</span>
       </span>
     </div>
   );

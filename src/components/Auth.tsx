@@ -55,31 +55,32 @@ export default function Auth({
       <section className="welcome-story">
         <Brand />
         <div className="welcome-content">
-          <p className="eyebrow">YOUR KNOWLEDGE. A CLEARER PICTURE.</p>
+          <p className="eyebrow">A REHEARSAL FOR YOUR NEXT CHAPTER</p>
           <h1>
-            Less searching.
+            Less guessing.
             <br />
-            More <em>knowing.</em>
+            More <em>clarity.</em>
           </h1>
           <p className="welcome-description">
-            Bring your project notes together. Find the answer, trace the
-            evidence, and keep the context.
+            Practice explaining your experience, your decisions, and your
+            thinking. Leave with a clearer next answer.
           </p>
           <div className="welcome-preview">
             <div className="preview-label">
-              <FileText size={16} /> ATLAS / PROJECT BRIEF <span>01</span>
+              <FileText size={16} /> INTERVIEW LAB / PRACTICE PROMPT{" "}
+              <span>01</span>
             </div>
-            <p>“The pilot launch is scheduled for November 12.”</p>
+            <p>“What did you own, and how did you verify the result?”</p>
             <div className="preview-evidence">
-              <Quote size={14} /> Answers that show their work.
+              <Quote size={14} /> A good answer starts with your experience.
             </div>
           </div>
           <ul className="welcome-points">
             <li>
-              <Check size={15} /> Private sources and saved conversations
+              <Check size={15} /> Role-specific questions and saved sessions
             </li>
             <li>
-              <Check size={15} /> Cited excerpts you can inspect
+              <Check size={15} /> Feedback grounded in your own words
             </li>
             <li>
               <Check size={15} /> You control what goes to AI
@@ -92,18 +93,18 @@ export default function Auth({
       </section>
       <section className="welcome-form">
         <div>
-          <p className="eyebrow">A WORKSPACE FOR YOUR NEXT IDEA</p>
+          <p className="eyebrow">PREPARE FOR THE CONVERSATION</p>
           <h2>
             {config.demoEnabled
               ? "Take a look inside."
               : signup
-                ? "Create your workspace."
+                ? "Create your practice space."
                 : "Welcome back."}
           </h2>
           <p className="muted">
             {config.demoEnabled
-              ? "Explore a realistic project with synthetic notes. No signup, no provider calls."
-              : "A quiet place to turn notes into useful answers."}
+              ? "Try a complete text interview with synthetic context. No signup or AI credits needed."
+              : "Your experience. A focused practice round. Useful next steps."}
           </p>
           {config.demoEnabled ? (
             <>
@@ -112,7 +113,7 @@ export default function Auth({
                 disabled={busy}
                 onClick={demo}
               >
-                {busy ? "Preparing workspace…" : "Explore demo workspace"}
+                {busy ? "Preparing practice…" : "Explore demo interview"}
                 <ArrowUpRight size={18} />
               </button>
               <div className="demo-disclosure">
@@ -120,9 +121,9 @@ export default function Auth({
                 <div>
                   <strong>A real product flow. A labelled demo.</strong>
                   <p>
-                    Sources, conversations, and persistence use the API. Answer
-                    previews retrieve excerpts deterministically; they are not
-                    AI-generated.
+                    Sessions and persistence use the real API. Demo questions
+                    are templates and feedback uses a simple local rubric;
+                    neither is AI-generated.
                   </p>
                 </div>
               </div>
@@ -164,11 +165,7 @@ export default function Auth({
               </label>
               <p className="small muted">Use at least 10 characters.</p>
               <button className="primary" disabled={busy}>
-                {busy
-                  ? "Please wait…"
-                  : signup
-                    ? "Create workspace"
-                    : "Sign in"}
+                {busy ? "Please wait…" : signup ? "Create account" : "Sign in"}
                 <ArrowUpRight size={16} />
               </button>
               <button
@@ -189,8 +186,8 @@ export default function Auth({
             {error}
           </p>
           <p className="welcome-privacy">
-            Your notes stay in your workspace. Live AI receives only your
-            question and relevant excerpts after you opt in.
+            Résumé and job context stay private to your account. Live AI
+            receives context and practice answers only after consent.
           </p>
         </div>
       </section>
