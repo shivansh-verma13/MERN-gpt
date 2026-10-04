@@ -1,6 +1,6 @@
 # Deployment and recovery
 
-Current status: built same-origin local demo, no new hosted URL. Required external inputs: a Gemini API key for live AI, persistent MongoDB and a Node-capable host. Static Netlify deployment alone is insufficient for the API.
+Current status (October 5, 2026): [Interview Lab](https://shivansh-interview-lab.netlify.app/) is published through the paired backend repository's Netlify configuration. Gemini and MongoDB credentials are configured as server secrets with owner approval. The cloud API currently returns 503: its MongoDB connection times out. The hosted user journey is not yet verified; inspect Atlas network access before inviting users. Static hosting and function bundling passed. The older Node hosting instructions below remain an alternative.
 
 ## Proposed preview
 
@@ -27,3 +27,14 @@ Record deployed revisions and DB backup. Roll back both application revisions to
 ## Operational limits
 
 Single API replica; locks/IP limiter are in-memory. Daily quota reservation is atomic in Mongo but is deliberately not refunded on provider errors. Maximum 50 sessions per account. No automated retention policy, email verification, password recovery or admin deletion tooling. Monitor host logs (no contexts), provider usage, readiness and database backups. Provider cancellation cannot guarantee cancellation of an accepted remote request.
+
+## Hosted release checkpoint — October 5, 2026
+
+- Owner explicitly approved transferring existing Gemini API and MongoDB credentials to Netlify and deploying. Credentials are masked server environment values; none are in Git or frontend assets.
+- New project: https://shivansh-interview-lab.netlify.app/ in shivansh-verma13, Free Legacy ($0), no paid resources, domain changes or Atlas access changes.
+- Netlify builds the backend upgrade/interview-lab branch and a pinned frontend revision. Static publishing and cloud function bundling passed; deploy c6b0e15 / 6ac2a4f4d2d382000881d2c9 published successfully.
+- Fixed production dev-dependency installation and repeated builds with isolated frontend staging checkouts. Scanner stays enabled for credentials; only public configuration constants are omitted from value matching.
+- Readiness is blocked: GET /health returns 503. Privacy-safe function logs show function_initialization_failed, category database_connection after about 5 seconds (MongoServerSelectionError). Atlas network access is a likely cause, not yet confirmed. Atlas browser is signed out; owner login requested before inspection. Do not widen network access without explicit approval.
+- Backend: all 16 tests pass, lint/build pass. Repeatable frontend release packaging against ecee40d563798147b4120ebf0f1f64ccba99a444 passed under NODE_ENV=production. Local Gemini/Atlas verification remains valid; no hosted AI success is claimed.
+- Resume: inspect Atlas network access and cluster status after owner login; fix the confirmed blocker with appropriate authorization. Run work/verify-hosted-interview.mjs for real hosted questions, feedback, saved review, replay, HTTPS cookie and CSRF checks. Browser verify login/history/review plus audio consent/transcription; keep physical hardware and live browser speech service testing separate from synthetic tests.
+- Then update this status, public portfolio project links and case study only after the hosted journey passes. No AI watermark or assistant attribution was added to commits. Next product remains Notes; do not start it yet.
