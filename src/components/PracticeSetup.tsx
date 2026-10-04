@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
-import type { Profile, Interview } from "../types";
+import type { Profile, Interview, SessionFormat } from "../types";
 import { post } from "../api";
 export const sampleProfile: Profile = {
   role: "Full-Stack Software Engineer",
@@ -31,6 +31,7 @@ export default function PracticeSetup({
     resume: "",
     job: "",
   });
+  const [format, setFormat] = useState<SessionFormat>("text");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -46,14 +47,14 @@ export default function PracticeSetup({
     setError("");
     controller.current = new AbortController();
     const timer = setTimeout(() => controller.current?.abort(), 35000);
-    const payload = JSON.stringify(profile);
+    const payload = JSON.stringify({ profile, format });
     if (attempt.current.payload !== payload)
       attempt.current = { payload, id: crypto.randomUUID() };
     try {
       onStarted(
         await post<Interview>(
           "/interviews",
-          { ...profile, requestId: attempt.current.id, consent },
+          { ...profile, format, requestId: attempt.current.id, consent },
           controller.current.signal,
         ),
       );
@@ -102,6 +103,42 @@ export default function PracticeSetup({
           Build a clearer answer, one question at a time.
         </p>
       </div>
+      <fieldset className="format-picker">
+        <legend>Choose your interview experience</legend>
+        <div>
+          {(
+            [
+              ["text", "Text practice", "Write and refine your answers."],
+              ["audio", "Audio practice", "Hear questions and answer aloud."],
+              ["video", "Video practice", "Camera preview and spoken answers."],
+              [
+                "simulation",
+                "Fullscreen simulation",
+                "Camera + microphone required. Exits pause the round.",
+              ],
+            ] as const
+          ).map(([value, title, description]) => (
+            <label key={value}>
+              <input
+                type="radio"
+                name="interview-format"
+                value={value}
+                checked={format === value}
+                disabled={busy}
+                onChange={() => setFormat(value)}
+              />
+              <span>
+                <strong>{title}</strong>
+                <small>{description}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+        <p>
+          Video stays on your device. Audio is sent to Gemini only with consent.
+          Fullscreen cannot detect help from another device.
+        </p>
+      </fieldset>
       <div className="setup-grid">
         <form onSubmit={start} className="setup-form">
           <div className="form-section">

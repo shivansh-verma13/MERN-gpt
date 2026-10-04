@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import MediaRoom from "./MediaRoom";
+import type { RoomState } from "./MediaRoom";
 import type { FormEvent } from "react";
 import { ArrowRight, Check, MessageSquare, Square } from "lucide-react";
 import type { Interview, Turn } from "../types";
@@ -63,6 +65,13 @@ export default function PracticeSession({
   onChanged: (v: Interview) => void;
   onReview: () => void;
 }) {
+  const [room, setRoom] = useState<RoomState>({
+    locked: interview.format === "simulation",
+    busy: false,
+    fullscreen: false,
+    camera: false,
+    microphone: false,
+  });
   const [answer, setAnswer] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -74,6 +83,8 @@ export default function PracticeSession({
     e.preventDefault();
     if (
       busy ||
+      room.locked ||
+      room.busy ||
       answer.trim().length < 10 ||
       (interview.mode === "live" && !consent)
     )
@@ -94,6 +105,7 @@ export default function PracticeSession({
             version: interview.version,
             requestId: attempt.current.id,
             consent,
+            environment: room,
           },
           controller.current.signal,
         ),
@@ -135,6 +147,7 @@ export default function PracticeSession({
       </div>
       <div
         className="session-progress"
+        role="group"
         aria-label={`${interview.cursor} of 3 primary questions answered`}
       >
         {[0, 1, 2].map((i) => (
@@ -159,6 +172,17 @@ export default function PracticeSession({
           </div>
         ))}
       </div>
+      {interview.format &&
+        interview.format !== "text" &&
+        interview.status !== "completed" && (
+          <MediaRoom
+            interview={interview}
+            onState={setRoom}
+            onTranscript={(text) =>
+              setAnswer((v) => (v + " " + text).trim().slice(0, 5000))
+            }
+          />
+        )}
       <div className="session-layout">
         <div>
           {interview.status === "completed" ? (
@@ -182,7 +206,7 @@ export default function PracticeSession({
             </div>
           ) : (
             <>
-              <div className="question-card">
+              <div hidden={room.locked} className="question-card">
                 <p className="eyebrow">
                   {interview.pendingFollowUp
                     ? "ONE LEVEL DEEPER · FOLLOW-UP"
@@ -197,7 +221,11 @@ export default function PracticeSession({
                     </p>
                   )}
               </div>
-              <form className="answer-form" onSubmit={submit}>
+              <form
+                hidden={room.locked}
+                className="answer-form"
+                onSubmit={submit}
+              >
                 <label htmlFor="practice-answer">Your answer</label>
                 <textarea
                   id="practice-answer"
@@ -207,7 +235,7 @@ export default function PracticeSession({
                   maxLength={5000}
                   minLength={10}
                   required
-                  disabled={busy}
+                  disabled={busy || room.busy}
                   placeholder="Explain the situation, what you did or would do, the trade-offs, and how you would verify the outcome."
                 />
                 <div className="field-meta">
@@ -220,7 +248,7 @@ export default function PracticeSession({
                       type="checkbox"
                       checked={consent}
                       onChange={(e) => setConsent(e.target.checked)}
-                      disabled={busy}
+                      disabled={busy || room.busy}
                     />
                     Send my practice context and this answer to {provider} for
                     feedback.
@@ -231,6 +259,8 @@ export default function PracticeSession({
                     className="primary"
                     disabled={
                       busy ||
+                      room.locked ||
+                      room.busy ||
                       answer.trim().length < 10 ||
                       (interview.mode === "live" && !consent)
                     }

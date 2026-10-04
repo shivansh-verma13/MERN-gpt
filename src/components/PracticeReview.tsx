@@ -36,6 +36,23 @@ export default function PracticeReview({
         </a>
       </div>
       <div className="review-disclaimer">{interview.report.disclaimer}</div>
+      {interview.format === "simulation" && (
+        <div className="media-room">
+          <h2>Session interruptions</h2>
+          <p>
+            Client-reported browser events, not proof of cheating. No eye
+            tracking or face analysis.
+          </p>
+          <ul>
+            {(interview.integrity ?? []).map((e) => (
+              <li key={e.id}>
+                {e.type.replaceAll("_", " ")} ·{" "}
+                {new Date(e.at).toLocaleTimeString()}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="review-grid">
         <div className="review-summary">
           <p className="eyebrow">WHAT TO KEEP</p>

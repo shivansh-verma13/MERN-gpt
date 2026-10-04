@@ -29,7 +29,11 @@ export type Turn = {
   latencyMs: number;
   tokens: number;
 };
+export type SessionFormat = "text" | "audio" | "video" | "simulation";
+export type IntegrityEvent = { id: string; type: string; at: string };
 export type Interview = {
+  format?: SessionFormat;
+  integrity?: IntegrityEvent[];
   id: string;
   profile: Profile;
   questions: { text: string; category: string; contextQuote: string }[];
