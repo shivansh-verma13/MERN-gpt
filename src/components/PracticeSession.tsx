@@ -72,6 +72,7 @@ export default function PracticeSession({
     camera: false,
     microphone: false,
   });
+  const [interim, setInterim] = useState("");
   const [answer, setAnswer] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -172,19 +173,30 @@ export default function PracticeSession({
           </div>
         ))}
       </div>
-      {interview.format &&
-        interview.format !== "text" &&
-        interview.status !== "completed" && (
-          <MediaRoom
-            interview={interview}
-            onState={setRoom}
-            onTranscript={(text) =>
-              setAnswer((v) => (v + " " + text).trim().slice(0, 5000))
-            }
-          />
-        )}
-      <div className="session-layout">
+      <div
+        className={
+          "session-layout " +
+          (interview.format && interview.format !== "text"
+            ? "studio-layout"
+            : "")
+        }
+      >
         <div>
+          {room.locked && (
+            <div className="question-card">
+              <p className="eyebrow">YOUR INTERVIEW TRANSCRIPT</p>
+              <h2>
+                {room.camera && room.microphone
+                  ? "Enter fullscreen to begin."
+                  : "Getting your studio ready."}
+              </h2>
+              <p>
+                Your question and editable transcript will appear here once the
+                simulation is ready. Device permissions are controlled by your
+                browser.
+              </p>
+            </div>
+          )}
           {interview.status === "completed" ? (
             <div className="complete-card">
               <span className="complete-icon">
@@ -226,7 +238,16 @@ export default function PracticeSession({
                 className="answer-form"
                 onSubmit={submit}
               >
-                <label htmlFor="practice-answer">Your answer</label>
+                <p className="eyebrow">
+                  {interview.format && interview.format !== "text"
+                    ? "LIVE TRANSCRIPT · REVIEW BEFORE SUBMITTING"
+                    : "YOUR RESPONSE"}
+                </p>
+                <label htmlFor="practice-answer">
+                  {interview.format && interview.format !== "text"
+                    ? "Your transcript / answer"
+                    : "Your answer"}
+                </label>
                 <textarea
                   id="practice-answer"
                   value={answer}
@@ -238,6 +259,12 @@ export default function PracticeSession({
                   disabled={busy || room.busy}
                   placeholder="Explain the situation, what you did or would do, the trade-offs, and how you would verify the outcome."
                 />
+                {interim && (
+                  <p className="live-interim" role="status">
+                    {interim}
+                    <span> · listening</span>
+                  </p>
+                )}
                 <div className="field-meta">
                   <span>No timer. Take a moment to think.</span>
                   <span>{answer.length.toLocaleString()} / 5,000</span>
@@ -291,6 +318,21 @@ export default function PracticeSession({
             </div>
           )}
         </div>
+        {interview.format &&
+          interview.format !== "text" &&
+          interview.status !== "completed" && (
+            <aside className="studio-camera">
+              <MediaRoom
+                interview={interview}
+                submitting={busy}
+                onState={setRoom}
+                onInterim={setInterim}
+                onTranscript={(text) =>
+                  setAnswer((v) => (v + " " + text).trim().slice(0, 5000))
+                }
+              />
+            </aside>
+          )}
         <aside className="session-notes" aria-label="Practice guidance">
           <span className="eyebrow">A GOOD ANSWER HAS A SHAPE</span>
           <h2>

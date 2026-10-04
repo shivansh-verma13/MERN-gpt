@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLiveCaptions } from "../useLiveCaptions";
 import { api, post } from "../api";
 import type { Interview } from "../types";
 export type RoomState = {
@@ -12,11 +13,18 @@ export default function MediaRoom({
   interview,
   onState,
   onTranscript,
+  onInterim,
+  submitting = false,
 }: {
   interview: Interview;
   onState: (s: RoomState) => void;
   onTranscript: (text: string) => void;
+  onInterim?: (text: string) => void;
+  submitting?: boolean;
 }) {
+  const [captions, setCaptions] = useState(false),
+    [speaking, setSpeaking] = useState(false);
+  const entered = useRef(false);
   const simulation = interview.format === "simulation",
     video = simulation || interview.format === "video";
   const [ready, setReady] = useState(false),
@@ -26,6 +34,18 @@ export default function MediaRoom({
     [consent, setConsent] = useState(false),
     [clip, setClip] = useState<Blob | null>(null),
     [error, setError] = useState("");
+  const live = useLiveCaptions(
+    captions &&
+      ready &&
+      !paused &&
+      !recording &&
+      !working &&
+      !speaking &&
+      !submitting,
+    interview.currentQuestion,
+    onTranscript,
+    onInterim,
+  );
   const preview = useRef<HTMLVideoElement>(null),
     stream = useRef<MediaStream | null>(null),
     recorder = useRef<MediaRecorder | null>(null),
@@ -148,18 +168,35 @@ export default function MediaRoom({
       window.speechSynthesis
     ) {
       window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(
-        new SpeechSynthesisUtterance(interview.currentQuestion),
-      );
+      const utterance = new SpeechSynthesisUtterance(interview.currentQuestion);
+      setSpeaking(true);
+      utterance.onend = () => {
+        if (alive.current) setSpeaking(false);
+      };
+      utterance.onerror = () => {
+        if (alive.current) setSpeaking(false);
+      };
+      window.speechSynthesis.speak(utterance);
     }
     return () => window.speechSynthesis?.cancel();
   }, [ready, paused, interview.currentQuestion]);
-  async function start() {
+  const autoStarted = useRef(false);
+  const autoStart = useRef<() => void>(() => {});
+  autoStart.current = () => {
+    void start(true);
+  };
+  useEffect(() => {
+    if (!autoStarted.current) {
+      autoStarted.current = true;
+      autoStart.current();
+    }
+  }, []);
+  async function start(automatic = false) {
     if (starting) return;
     setStarting(true);
     setError("");
     try {
-      if (simulation) {
+      if (simulation && !automatic) {
         if (!document.documentElement.requestFullscreen)
           throw Error(
             "Fullscreen is unavailable in this browser. Choose audio or video practice instead.",
@@ -196,9 +233,13 @@ export default function MediaRoom({
         });
         if (preview.current) preview.current.srcObject = s;
       }
-      if (simulation && !document.fullscreenElement)
-        throw Error("Return to fullscreen to start the interview.");
-      event(paused ? "fullscreen_return" : "session_started");
+      if (simulation && !document.fullscreenElement) {
+        setReady(true);
+        setPaused(true);
+        return;
+      }
+      event(entered.current ? "fullscreen_return" : "session_started");
+      entered.current = true;
       setReady(true);
       setPaused(false);
     } catch (e) {
@@ -225,6 +266,7 @@ export default function MediaRoom({
           "Recording is unavailable. You can type your answer in practice mode.",
         );
       window.speechSynthesis?.cancel();
+      setSpeaking(false);
       const mime = [
         "audio/webm;codecs=opus",
         "audio/mp4",
@@ -351,9 +393,17 @@ export default function MediaRoom({
       return;
     }
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(
-      new SpeechSynthesisUtterance(interview.currentQuestion ?? ""),
+    const utterance = new SpeechSynthesisUtterance(
+      interview.currentQuestion ?? "",
     );
+    setSpeaking(true);
+    utterance.onend = () => {
+      if (alive.current) setSpeaking(false);
+    };
+    utterance.onerror = () => {
+      if (alive.current) setSpeaking(false);
+    };
+    window.speechSynthesis.speak(utterance);
   }
   return (
     <div className="media-room">
@@ -366,17 +416,13 @@ export default function MediaRoom({
       </p>
       <h2>
         {paused
-          ? "Interview paused"
+          ? entered.current
+            ? "Interview paused"
+            : "Ready to enter fullscreen"
           : ready
             ? "Your practice studio"
             : "Set up your devices"}
       </h2>
-      <p>
-        Camera preview stays on this device. Optional recordings are saved
-        locally for download and never uploaded. Audio clips are sent to Gemini
-        only when you choose transcription. Edited transcripts are saved with
-        your answers.
-      </p>
       {video && (
         <video
           ref={preview}
@@ -386,12 +432,33 @@ export default function MediaRoom({
           aria-label="Local camera preview"
         />
       )}
+      {ready && paused && !entered.current && (
+        <p>Your devices are ready. Enter fullscreen to begin the simulation.</p>
+      )}
+      {live.supported ? (
+        <label className="consent">
+          <input
+            type="checkbox"
+            checked={captions}
+            onChange={(e) => setCaptions(e.target.checked)}
+          />
+          Enable live captions. Your browser speech service may send audio to
+          its provider. Final words appear in the editable transcript on the
+          left.
+        </label>
+      ) : (
+        <p className="muted">
+          Live captions are unavailable in this browser. Record an answer and
+          transcribe it with Gemini, or type on the left.
+        </p>
+      )}
+      {captions && <p role="status">{live.status}</p>}
       {video && (
         <label className="consent">
           <input
             type="checkbox"
             checked={saveVideo}
-            disabled={recording || working}
+            disabled={recording || working || submitting}
             onChange={(e) => setSaveVideo(e.target.checked)}
           />
           Also record video locally while answering (up to 2 minutes / 20 MB).
@@ -414,7 +481,7 @@ export default function MediaRoom({
             disabled={starting}
             onClick={() => void start()}
           >
-            {paused
+            {paused && entered.current
               ? "Resume interview"
               : simulation
                 ? "Enter fullscreen & enable devices"
@@ -426,19 +493,22 @@ export default function MediaRoom({
             <button
               className="secondary"
               onClick={speak}
-              disabled={recording || working}
+              disabled={recording || working || submitting}
             >
               Read question aloud
             </button>
             <button
               className="secondary"
-              onClick={() => window.speechSynthesis?.cancel()}
+              onClick={() => {
+                window.speechSynthesis?.cancel();
+                setSpeaking(false);
+              }}
             >
               Stop speech
             </button>
             <button
               className="primary"
-              disabled={working}
+              disabled={working || submitting}
               onClick={recording ? stop : record}
             >
               {recording ? "Stop recording" : "Record answer"}
@@ -459,7 +529,7 @@ export default function MediaRoom({
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              disabled={working}
+              disabled={working || submitting}
             />
             Send this audio clip to Gemini to create an editable transcript.
           </label>
@@ -479,7 +549,7 @@ export default function MediaRoom({
           )}
           <button
             className="secondary"
-            disabled={working}
+            disabled={working || submitting}
             onClick={() => setClip(null)}
           >
             Discard clip
@@ -491,6 +561,15 @@ export default function MediaRoom({
           Cancel transcription
         </button>
       )}
+      <details className="media-privacy">
+        <summary>Privacy and recording details</summary>{" "}
+        <p>
+          Camera preview stays on this device. Optional recordings are saved
+          locally for download and never uploaded. Audio clips are sent to
+          Gemini only when you choose transcription. Edited transcripts are
+          saved with your answers.
+        </p>
+      </details>
       {simulation && (
         <p className="muted">
           Fullscreen exits and interruptions pause answering and appear in your

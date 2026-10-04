@@ -66,6 +66,8 @@ it("requires fullscreen and devices, pauses on escape, resumes with a user actio
   expect(state).toHaveBeenLastCalledWith(
     expect.objectContaining({ locked: true }),
   );
+  await screen.findByText("Ready to enter fullscreen");
+  expect(enter).not.toHaveBeenCalled();
   fireEvent.click(
     screen.getByRole("button", { name: "Enter fullscreen & enable devices" }),
   );
@@ -105,9 +107,6 @@ it("permission rejection stays locked and gives a recoverable error", async () =
   const state = vi.fn();
   render(
     <MediaRoom interview={interview} onState={state} onTranscript={vi.fn()} />,
-  );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Enter fullscreen & enable devices" }),
   );
   await screen.findByText("Permission denied");
   expect(state).toHaveBeenLastCalledWith(
@@ -172,9 +171,7 @@ it("records audio and local video, requires audio consent, transcribes to an edi
       onTranscript={transcript}
     />,
   );
-  fireEvent.click(
-    screen.getByRole("button", { name: "Enable microphone & camera" }),
-  );
+
   await screen.findByText("Your practice studio");
   fireEvent.click(screen.getByLabelText(/Also record video locally/));
   fireEvent.click(screen.getByRole("button", { name: "Record answer" }));
