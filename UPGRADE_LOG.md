@@ -9,7 +9,7 @@
 - Schemas reject invalid plans and invented quotes; unsupported strengths require evidence. Versioned ownership-conditional writes, replay IDs, in-flight locks, bounded history/caps, daily budgets, timeouts, cancellation and privacy-safe logs retained/refined.
 - Additive Mongo v2 interview indexes; old source/thread data preserved. No live destructive migration performed.
 - Verification: 7 frontend / 12 backend tests; real MongoMemoryServer 7.0.14; 9 deterministic cases; both lint/typecheck/build/install pass; active dependency audits 0 vulnerabilities. Browser complete practice/refresh/API restart/export verified; 6 responsive widths; axe 0 violations for setup/review desktop/mobile.
-- Deployment: compiled same-origin local demo on port 5004; no new hosted URL. Docker scaffold not built locally. Same-origin packaging helper will be checked against the pushed frontend revision.
+- Deployment: compiled same-origin local demo on port 5004; no new hosted URL. Docker scaffold not built locally. Same-origin packaging helper verified against frontend commit ea0e492bb71f5098f76797ff0e97674e1b7e3d26; packaged UI starts an interview against the compiled API.
 - Blockers: Gemini key + real synthetic AI quality review; persistent Mongo and HTTPS Node preview host. No paid resources or production updates requested/performed.
 - Known limits: one API replica, text only, formative feedback not technical verification, no password recovery/email verification/automatic retention.
 - Next recommended project: MERN-NotePadApp-Frontend + NotepadAppBackend; wait for owner instruction before modifying it.
